@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padrões GRASP — Sistema de Biblioteca</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+          --bg:        #0f0f0f;
+          --surface:   #161616;
+          --border:    #2a2a2a;
+          --accent:    #c8a96e;
+          --accent2:   #6e9ec8;
+          --danger:    #c86e6e;
+          --success:   #6ec88a;
+          --text:      #e8e4dc;
+          --muted:     #7a7570;
+          --slide-w:   900px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+          background: var(--bg);
+          color: var(--text);
+          font-family: 'Outfit', sans-serif;
+          font-weight: 300;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 40px 20px 80px;
+          gap: 0;
+        }
+
+        /* NAV */
+        nav {
+          position: fixed;
+          bottom: 28px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: #1a1a1a;
+          border: 1px solid var(--border);
+          border-radius: 40px;
+          padding: 10px 24px;
+          z-index: 100;
+          box-shadow: 0 8px 40px rgba(0,0,0,.6);
+        }
+        nav button {
+          background: none;
+          border: none;
+          color: var(--muted);
+          font-family: 'Outfit', sans-serif;
+          font-size: 13px;
+          cursor: pointer;
+          padding: 4px 12px;
+          border-radius: 20px;
+          transition: all .2s;
+          letter-spacing: .04em;
+        }
+        nav button:hover, nav button.active {
+          color: var(--accent);
+          background: rgba(200,169,110,.08);
+        }
+        #slide-counter {
+          color: var(--muted);
+          font-size: 12px;
+          min-width: 48px;
+          text-align: center;
+          letter-spacing: .06em;
+        }
+        nav .arrow {
+          font-size: 18px;
+          padding: 4px 8px;
+        }
+
+        /* SLIDES CONTAINER */
+        .slides {
+          width: 100%;
+          max-width: var(--slide-w);
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+        }
+
+        /* SLIDE BASE */
+        .slide {
+          display: none;
+          min-height: 540px;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          padding: 64px 72px;
+          position: relative;
+          background: var(--surface);
+          animation: fadeIn .35s ease;
+        }
+        .slide.active { display: flex; flex-direction: column; justify-content: center; }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SLIDE NUMBER */
+        .slide::after {
+          content: attr(data-num);
+          position: absolute;
+          top: 28px;
+          right: 36px;
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--muted);
+          letter-spacing: .1em;
+        }
+
+        /* TYPOGRAPHY */
+        .label {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: .18em;
+          color: var(--accent);
+          text-transform: uppercase;
+          margin-bottom: 20px;
+        }
+
+        h1 {
+          font-family: 'DM Serif Display', serif;
+          font-size: 52px;
+          line-height: 1.1;
+          font-weight: 400;
+          color: var(--text);
+          margin-bottom: 24px;
+        }
+        h1 em {
+          font-style: italic;
+          color: var(--accent);
+        }
+
+        h2 {
+          font-family: 'DM Serif Display', serif;
+          font-size: 36px;
+          font-weight: 400;
+          color: var(--text);
+          margin-bottom: 28px;
+          line-height: 1.2;
+        }
+
+        h3 {
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: var(--accent);
+          margin-bottom: 10px;
+        }
+
+        p {
+          font-size: 15.5px;
+          line-height: 1.75;
+          color: #b8b0a4;
+          max-width: 640px;
+        }
+
+        .subtitle {
+          font-size: 18px;
+          color: var(--muted);
+          font-weight: 300;
+          line-height: 1.6;
+          margin-bottom: 0;
+          max-width: 560px;
+        }
+
+        /* DIVIDER */
+        hr {
+          border: none;
+          border-top: 1px solid var(--border);
+          margin: 32px 0;
+        }
+
+        /* MEMBERS */
+        .members {
+          display: flex;
+          gap: 32px;
+          margin-top: 40px;
+        }
+        .member {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .member span:first-child {
+          font-size: 14px;
+          color: var(--text);
+          font-weight: 500;
+        }
+        .member span:last-child {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--muted);
+        }
+
+        /* CONTEXT BOX */
+        .context-box {
+          border-left: 3px solid var(--accent);
+          padding: 20px 24px;
+          background: rgba(200,169,110,.04);
+          border-radius: 0 4px 4px 0;
+          margin: 28px 0;
+        }
+        .context-box p {
+          font-size: 16px;
+          color: var(--text);
+          font-style: italic;
+          line-height: 1.7;
+        }
+
+        /* PROBLEMS LIST */
+        .problems {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 8px;
+        }
+        .problem-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          font-size: 14.5px;
+          color: #b8b0a4;
+          line-height: 1.6;
+        }
+        .problem-item .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: var(--danger);
+          margin-top: 8px;
+          flex-shrink: 0;
+        }
+        .problem-item .dot.ok { background: var(--success); }
+
+        /* CODE BLOCK */
+        .code-wrap {
+          background: #0a0a0a;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          overflow: hidden;
+          margin-top: 4px;
+        }
+        .code-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 18px;
+          border-bottom: 1px solid var(--border);
+          background: #111;
+        }
+        .code-header span {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--muted);
+          letter-spacing: .06em;
+        }
+        .code-header .badge {
+          font-size: 10px;
+          padding: 2px 8px;
+          border-radius: 20px;
+          font-family: 'DM Mono', monospace;
+          letter-spacing: .04em;
+        }
+        .badge.before { background: rgba(200,110,110,.15); color: var(--danger); border: 1px solid rgba(200,110,110,.3); }
+        .badge.after  { background: rgba(110,200,138,.15); color: var(--success); border: 1px solid rgba(110,200,138,.3); }
+
+        pre {
+          padding: 20px 22px;
+          overflow-x: auto;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          line-height: 1.7;
+          color: #c8c0b4;
+          max-height: 320px;
+          overflow-y: auto;
+        }
+        pre::-webkit-scrollbar { width: 4px; height: 4px; }
+        pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .kw  { color: #c86e6e; }
+        .cn  { color: #c8a96e; }
+        .cm  { color: #4a5568; font-style: italic; }
+        .st  { color: #6ec88a; }
+        .nm  { color: #6e9ec8; }
+        .fn  { color: #b89ec8; }
+
+        /* GRASP CARDS */
+        .grasp-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          margin-top: 8px;
+        }
+        .grasp-card {
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          padding: 18px 20px;
+          background: #111;
+          position: relative;
+          overflow: hidden;
+        }
+        .grasp-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0;
+          width: 3px; height: 100%;
+          background: var(--accent);
+        }
+        .grasp-card.a2::before { background: var(--accent2); }
+        .grasp-card.danger::before { background: var(--danger); }
+        .grasp-card.success::before { background: var(--success); }
+
+        .grasp-card h4 {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          letter-spacing: .1em;
+          color: var(--accent);
+          text-transform: uppercase;
+          margin-bottom: 6px;
+        }
+        .grasp-card.a2 h4 { color: var(--accent2); }
+        .grasp-card.danger h4 { color: var(--danger); }
+        .grasp-card.success h4 { color: var(--success); }
+
+        .grasp-card p {
+          font-size: 13px;
+          line-height: 1.6;
+          color: var(--muted);
+          max-width: none;
+        }
+        .grasp-card .where {
+          font-size: 12px;
+          color: #504a44;
+          margin-top: 8px;
+          font-family: 'DM Mono', monospace;
+        }
+
+        /* TABLE */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13.5px;
+          margin-top: 8px;
+        }
+        th {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+          color: var(--muted);
+          text-align: left;
+          padding: 10px 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        td {
+          padding: 13px 16px;
+          border-bottom: 1px solid #1e1e1e;
+          color: #b0a898;
+          line-height: 1.5;
+          vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        td:first-child {
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          color: var(--accent);
+          white-space: nowrap;
+        }
+        td.code-ref {
+          font-family: 'DM Mono', monospace;
+          font-size: 11.5px;
+          color: var(--accent2);
+        }
+
+        /* TWO COL */
+        .two-col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
+          align-items: start;
+        }
+
+        /* CONCLUSION */
+        .conclusion-items {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          margin-top: 12px;
+        }
+        .conc-item {
+          display: grid;
+          grid-template-columns: 32px 1fr;
+          gap: 16px;
+          align-items: start;
+        }
+        .conc-num {
+          font-family: 'DM Serif Display', serif;
+          font-size: 28px;
+          color: var(--border);
+          line-height: 1;
+          padding-top: 2px;
+        }
+        .conc-text strong {
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text);
+          margin-bottom: 3px;
+        }
+        .conc-text span {
+          font-size: 13px;
+          color: var(--muted);
+          line-height: 1.6;
+        }
+
+        /* ACCENT LINE */
+        .accent-line {
+          width: 48px;
+          height: 2px;
+          background: var(--accent);
+          margin-bottom: 32px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="slides">
+
+    <!-- SLIDE 1: CAPA -->
+    <div class="slide active" data-num="01">
+        <div class="accent-line"></div>
+        <div class="label">Programação de Computadores III</div>
+        <h1>Padrões <em>GRASP</em><br>em um Sistema<br>de Biblioteca</h1>
+        <p class="subtitle">Análise comparativa entre código sem padrões e código refatorado com a aplicação de cinco princípios GRASP.</p>
+        <div class="members">
+            <div class="member">
+                <span>Alessandra Navegante Corrêa</span>
+                <span>T383-5TC</span>
+            </div>
+            <div class="member">
+                <span>Vinícius Silva dos Santos</span>
+                <span>T383-5TC</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: O QUE É GRASP -->
+    <div class="slide" data-num="02">
+        <div class="label">Fundamentação Teórica</div>
+        <h2>O que são os padrões GRASP?</h2>
+        <p>GRASP — <strong style="color:var(--text)">General Responsibility Assignment Software Patterns</strong> — é um conjunto de princípios que orientam como distribuir responsabilidades entre as classes de um sistema orientado a objetos.</p>
+        <hr>
+        <p>Seu objetivo central é responder a uma pergunta simples: <em style="color:var(--accent)">"Qual classe deve ser responsável por determinada operação?"</em> A resposta a essa pergunta determina diretamente a qualidade estrutural do sistema.</p>
+        <hr>
+        <p>Neste trabalho aplicamos cinco padrões: <strong style="color:var(--text)">Information Expert, High Cohesion, Low Coupling, Pure Fabrication</strong> e <strong style="color:var(--text)">Controller</strong>.</p>
+    </div>
+
+    <!-- SLIDE 3: SITUAÇÃO-PROBLEMA -->
+    <div class="slide" data-num="03">
+        <div class="label">Contexto</div>
+        <h2>Situação-Problema</h2>
+        <div class="context-box">
+            <p>Uma biblioteca municipal precisa de um sistema para registrar empréstimos de livros, controlar prazos de devolução e calcular multas para devoluções atrasadas. O sistema foi implementado de forma improvisada, com uma única classe concentrando todas as responsabilidades.</p>
+        </div>
+        <p>O sistema funciona, porém qualquer alteração em uma regra de negócio — como mudar o valor da multa por dia — exige modificações em múltiplos pontos do código, aumentando o risco de erros e dificultando a manutenção.</p>
+    </div>
+
+    <!-- SLIDE 4: CÓDIGO ANTES (parte 1) -->
+    <div class="slide" data-num="04">
+        <div class="label">O Antes — Código sem GRASP</div>
+        <h2>Classe única: atributos</h2>
+        <div class="code-wrap">
+            <div class="code-header">
+                <span>Emprestimo.java</span>
+                <span class="badge before">sem padrões</span>
+            </div>
+            <pre><span class="kw">public class</span> <span class="cn">Emprestimo</span> {
+
+    <span class="cm">// Dados do livro misturados aqui</span>
+    <span class="kw">String</span> tituloLivro;
+    <span class="kw">String</span> autorLivro;
+
+    <span class="cm">// Dados do usuário misturados aqui também</span>
+    <span class="kw">String</span> nomeUsuario;
+    <span class="kw">boolean</span> usuarioAdimplente;
+
+    <span class="cm">// Dados do empréstimo</span>
+    <span class="nm">LocalDate</span> dataDevolucaoPrevista;
+    <span class="nm">LocalDate</span> dataDevolucaoReal;
+
+    <span class="kw">public</span> <span class="fn">Emprestimo</span>(<span class="kw">String</span> tituloLivro, <span class="kw">String</span> autorLivro,
+                      <span class="kw">String</span> nomeUsuario, <span class="kw">boolean</span> usuarioAdimplente,
+                      <span class="nm">LocalDate</span> dataDevolucaoPrevista, <span class="nm">LocalDate</span> dataDevolucaoReal) {
+        <span class="kw">this</span>.tituloLivro           = tituloLivro;
+        <span class="kw">this</span>.autorLivro             = autorLivro;
+        <span class="kw">this</span>.nomeUsuario            = nomeUsuario;
+        <span class="kw">this</span>.usuarioAdimplente      = usuarioAdimplente;
+        <span class="kw">this</span>.dataDevolucaoPrevista  = dataDevolucaoPrevista;
+        <span class="kw">this</span>.dataDevolucaoReal      = dataDevolucaoReal;
+    }
+}</pre>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: CÓDIGO ANTES (parte 2) -->
+    <div class="slide" data-num="05">
+        <div class="label">O Antes — Código sem GRASP</div>
+        <h2>Lógica duplicada e misturada</h2>
+        <div class="code-wrap">
+            <div class="code-header">
+                <span>Emprestimo.java — métodos</span>
+                <span class="badge before">sem padrões</span>
+            </div>
+            <pre>    <span class="kw">public double</span> <span class="fn">calcularMulta</span>() {
+        <span class="kw">long</span> diasAtraso = <span class="nm">ChronoUnit</span>.DAYS.between(dataDevolucaoPrevista, dataDevolucaoReal);
+        <span class="kw">if</span> (diasAtraso &lt;= <span class="nm">0</span>) <span class="kw">return</span> <span class="nm">0</span>;
+        <span class="kw">double</span> multa = diasAtraso * <span class="nm">2.50</span>;
+        <span class="kw">if</span> (!usuarioAdimplente) multa = multa * <span class="nm">1.5</span>; <span class="cm">// regra de usuário aqui?</span>
+        <span class="kw">return</span> multa;
+    }
+
+    <span class="kw">public void</span> <span class="fn">imprimirRecibo</span>() {
+        <span class="cm">// ...</span>
+        <span class="kw">long</span> diasAtraso = <span class="nm">ChronoUnit</span>.DAYS.between(dataDevolucaoPrevista, dataDevolucaoReal);
+        <span class="kw">if</span> (diasAtraso &gt; <span class="nm">0</span>) {
+            <span class="kw">double</span> multa = diasAtraso * <span class="nm">2.50</span>;           <span class="cm">// DUPLICADO</span>
+            <span class="kw">if</span> (!usuarioAdimplente) multa *= <span class="nm">1.5</span>;      <span class="cm">// DUPLICADO</span>
+            <span class="nm">System</span>.out.printf(<span class="st">"Multa: R$ %.2f%n"</span>, multa);
+        }
+    }</pre>
+        </div>
+        <div class="problems" style="margin-top:20px">
+            <div class="problem-item"><div class="dot"></div>Dados de livro, usuário e empréstimo concentrados em uma única classe</div>
+            <div class="problem-item"><div class="dot"></div>Regra de multa duplicada em dois métodos distintos</div>
+            <div class="problem-item"><div class="dot"></div>Regra de penalidade do usuário codificada dentro de <code style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)">Emprestimo</code></div>
+            <div class="problem-item"><div class="dot"></div>Impressão de recibo como responsabilidade de uma classe de domínio</div>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: VISÃO GERAL DO CÓDIGO CORRIGIDO -->
+    <div class="slide" data-num="06">
+        <div class="label">O Depois — Código com GRASP</div>
+        <h2>Estrutura das classes</h2>
+        <div class="grasp-grid">
+            <div class="grasp-card">
+                <h4>Livro</h4>
+                <p>Armazena título e autor. Responsável por retornar sua própria descrição.</p>
+                <p class="where">— Information Expert</p>
+            </div>
+            <div class="grasp-card a2">
+                <h4>Usuario</h4>
+                <p>Armazena nome e situação de adimplência. Decide se o usuário tem penalidade extra.</p>
+                <p class="where">— Information Expert / High Cohesion</p>
+            </div>
+            <div class="grasp-card danger">
+                <h4>CalculadoraMulta</h4>
+                <p>Fabricação pura: não existe no domínio real, mas centraliza a regra de cálculo.</p>
+                <p class="where">— Pure Fabrication / Low Coupling</p>
+            </div>
+            <div class="grasp-card success">
+                <h4>Emprestimo</h4>
+                <p>Gerencia livro, usuário e datas. Calcula apenas os dias de atraso — nada mais.</p>
+                <p class="where">— High Cohesion / Low Coupling</p>
+            </div>
+        </div>
+        <div style="margin-top:16px;padding:14px 18px;border:1px solid var(--border);border-radius:4px;background:#111;font-size:13px;color:var(--muted);">
+            <span style="font-family:'DM Mono',monospace;color:var(--success);font-size:11px;">CONTROLLER</span>&nbsp;&nbsp;
+            <strong style="color:var(--text)">DevolucaoController</strong> — orquestra o fluxo de devolução sem conter lógica de negócio.
+        </div>
+    </div>
+
+    <!-- SLIDE 7: CÓDIGO DEPOIS (Livro + Usuario) -->
+    <div class="slide" data-num="07">
+        <div class="label">O Depois — Information Expert</div>
+        <h2>Classes Livro e Usuario</h2>
+        <div class="two-col">
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span>Livro.java</span>
+                    <span class="badge after">expert</span>
+                </div>
+                <pre><span class="kw">class</span> <span class="cn">Livro</span> {
+  <span class="kw">private</span> <span class="kw">String</span> titulo;
+  <span class="kw">private</span> <span class="kw">String</span> autor;
+
+  <span class="kw">public</span> <span class="fn">Livro</span>(<span class="kw">String</span> titulo,
+               <span class="kw">String</span> autor) {
+    <span class="kw">this</span>.titulo = titulo;
+    <span class="kw">this</span>.autor  = autor;
+  }
+
+  <span class="kw">public</span> <span class="nm">String</span> <span class="fn">getDescricao</span>() {
+    <span class="kw">return</span> titulo + <span class="st">" — "</span> + autor;
+  }
+}</pre>
+            </div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span>Usuario.java</span>
+                    <span class="badge after">expert</span>
+                </div>
+                <pre><span class="kw">class</span> <span class="cn">Usuario</span> {
+  <span class="kw">private</span> <span class="kw">String</span>  nome;
+  <span class="kw">private boolean</span> adimplente;
+
+  <span class="kw">public</span> <span class="fn">Usuario</span>(<span class="kw">String</span> nome,
+                <span class="kw">boolean</span> adimplente) {
+    <span class="kw">this</span>.nome       = nome;
+    <span class="kw">this</span>.adimplente = adimplente;
+  }
+
+  <span class="kw">public</span> <span class="nm">String</span>  <span class="fn">getNome</span>() {<span class="kw">return</span> nome;}
+
+  <span class="kw">public boolean</span> <span class="fn">temPenalidadeExtra</span>() {
+    <span class="kw">return</span> !adimplente;
+  }
+}</pre>
+            </div>
+        </div>
+        <p style="margin-top:18px;font-size:13.5px;color:var(--muted);">Cada classe opera exclusivamente sobre os dados que ela mesma possui — princípio central do <strong style="color:var(--text)">Information Expert</strong>.</p>
+    </div>
+
+    <!-- SLIDE 8: CÓDIGO DEPOIS (CalculadoraMulta + Emprestimo) -->
+    <div class="slide" data-num="08">
+        <div class="label">O Depois — Pure Fabrication / High Cohesion</div>
+        <h2>CalculadoraMulta e Emprestimo</h2>
+        <div class="two-col">
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span>CalculadoraMulta.java</span>
+                    <span class="badge after">fabrication</span>
+                </div>
+                <pre><span class="kw">class</span> <span class="cn">CalculadoraMulta</span> {
+  <span class="kw">private static final double</span>
+    MULTA_DIA   = <span class="nm">2.50</span>;
+  <span class="kw">private static final double</span>
+    PENALIDADE  = <span class="nm">1.5</span>;
+
+  <span class="kw">public double</span> <span class="fn">calcular</span>(
+      <span class="kw">long</span> diasAtraso,
+      <span class="cn">Usuario</span> usuario) {
+
+    <span class="kw">if</span> (diasAtraso &lt;= <span class="nm">0</span>) <span class="kw">return</span> <span class="nm">0</span>;
+    <span class="kw">double</span> multa = diasAtraso * MULTA_DIA;
+    <span class="kw">if</span> (usuario.<span class="fn">temPenalidadeExtra</span>())
+      multa *= PENALIDADE;
+    <span class="kw">return</span> multa;
+  }
+}</pre>
+            </div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span>Emprestimo.java</span>
+                    <span class="badge after">coesão</span>
+                </div>
+                <pre><span class="kw">class</span> <span class="cn">Emprestimo</span> {
+  <span class="kw">private</span> <span class="cn">Livro</span>     livro;
+  <span class="kw">private</span> <span class="cn">Usuario</span>  usuario;
+  <span class="kw">private</span> <span class="nm">LocalDate</span> dataPrevista;
+  <span class="kw">private</span> <span class="nm">LocalDate</span> dataReal;
+
+  <span class="cm">// construtor omitido por espaço</span>
+
+  <span class="kw">public long</span> <span class="fn">calcularDiasAtraso</span>() {
+    <span class="kw">return</span> <span class="nm">Math</span>.<span class="fn">max</span>(<span class="nm">0</span>,
+      <span class="nm">ChronoUnit</span>.DAYS.<span class="fn">between</span>(
+        dataPrevista, dataReal));
+  }
+  <span class="cm">// getters omitidos por espaço</span>
+}</pre>
+            </div>
+        </div>
+        <p style="margin-top:18px;font-size:13.5px;color:var(--muted);"><code style="font-family:'DM Mono',monospace;color:var(--accent)">CalculadoraMulta</code> não existe no mundo real da biblioteca — é uma <strong style="color:var(--text)">Pure Fabrication</strong> que elimina a duplicação. <code style="font-family:'DM Mono',monospace;color:var(--accent2)">Emprestimo</code> agora tem apenas uma responsabilidade.</p>
+    </div>
+
+    <!-- SLIDE 9: CONTROLLER -->
+    <div class="slide" data-num="09">
+        <div class="label">O Depois — Controller</div>
+        <h2>DevolucaoController</h2>
+        <div class="code-wrap">
+            <div class="code-header">
+                <span>DevolucaoController.java</span>
+                <span class="badge after">controller</span>
+            </div>
+            <pre><span class="kw">class</span> <span class="cn">DevolucaoController</span> {
+    <span class="kw">private</span> <span class="cn">CalculadoraMulta</span> calculadora = <span class="kw">new</span> <span class="cn">CalculadoraMulta</span>();
+
+    <span class="kw">public void</span> <span class="fn">processarDevolucao</span>(<span class="cn">Emprestimo</span> emprestimo) {
+        <span class="kw">long</span>   diasAtraso = emprestimo.<span class="fn">calcularDiasAtraso</span>();
+        <span class="kw">double</span> multa      = calculadora.<span class="fn">calcular</span>(diasAtraso, emprestimo.<span class="fn">getUsuario</span>());
+        <span class="fn">imprimirRecibo</span>(emprestimo, diasAtraso, multa);
+    }
+
+    <span class="kw">private void</span> <span class="fn">imprimirRecibo</span>(<span class="cn">Emprestimo</span> emp, <span class="kw">long</span> dias, <span class="kw">double</span> multa) {
+        <span class="nm">System</span>.out.<span class="fn">println</span>(<span class="st">"======= RECIBO DE DEVOLUÇÃO ======="</span>);
+        <span class="nm">System</span>.out.<span class="fn">println</span>(<span class="st">"Usuário: "</span> + emp.<span class="fn">getUsuario</span>().<span class="fn">getNome</span>());
+        <span class="nm">System</span>.out.<span class="fn">println</span>(<span class="st">"Livro:   "</span> + emp.<span class="fn">getLivro</span>().<span class="fn">getDescricao</span>());
+        <span class="kw">if</span> (multa > <span class="nm">0</span>)
+            <span class="nm">System</span>.out.<span class="fn">printf</span>(<span class="st">"Multa: R$ %.2f%n"</span>, multa);
+        <span class="kw">else</span>
+            <span class="nm">System</span>.out.<span class="fn">println</span>(<span class="st">"Devolução no prazo. Sem multa."</span>);
+        <span class="nm">System</span>.out.<span class="fn">println</span>(<span class="st">"==================================="</span>);
+    }
+}</pre>
+        </div>
+        <p style="margin-top:16px;font-size:13.5px;color:var(--muted);">O Controller orquestra o fluxo sem concentrar regras de negócio. Ele delega o cálculo para <code style="font-family:'DM Mono',monospace;color:var(--accent)">CalculadoraMulta</code> e a descrição para cada especialista.</p>
+    </div>
+
+    <!-- SLIDE 10: ANÁLISE COMPARATIVA -->
+    <div class="slide" data-num="10">
+        <div class="label">Análise Comparativa</div>
+        <h2>Os cinco padrões aplicados</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Padrão GRASP</th>
+                <th>Aplicado em</th>
+                <th>Benefício</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Information Expert</td>
+                <td class="code-ref">Livro, Usuario, Emprestimo</td>
+                <td>Cada classe opera sobre os dados que possui, sem depender de terceiros</td>
+            </tr>
+            <tr>
+                <td>High Cohesion</td>
+                <td class="code-ref">Livro, Usuario, Emprestimo</td>
+                <td>Classes com responsabilidade única, curtas e fáceis de manter</td>
+            </tr>
+            <tr>
+                <td>Low Coupling</td>
+                <td class="code-ref">Emprestimo, Controller</td>
+                <td>Mudança na regra de multa não afeta Emprestimo nem Usuario</td>
+            </tr>
+            <tr>
+                <td>Pure Fabrication</td>
+                <td class="code-ref">CalculadoraMulta</td>
+                <td>Elimina a duplicação e centraliza a regra de negócio em um único ponto</td>
+            </tr>
+            <tr>
+                <td>Controller</td>
+                <td class="code-ref">DevolucaoController</td>
+                <td>Separa a camada de coordenação da camada de domínio</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SLIDE 11: CONCLUSÃO -->
+    <div class="slide" data-num="11">
+        <div class="label">Conclusão</div>
+        <h2>O que a refatoração gerou</h2>
+        <div class="conclusion-items">
+            <div class="conc-item">
+                <div class="conc-num">1</div>
+                <div class="conc-text">
+                    <strong>Manutenibilidade</strong>
+                    <span>Alterar o valor da multa ou a regra de penalidade exige modificação em um único ponto do código.</span>
+                </div>
+            </div>
+            <div class="conc-item">
+                <div class="conc-num">2</div>
+                <div class="conc-text">
+                    <strong>Legibilidade</strong>
+                    <span>Cada classe tem um nome e uma responsabilidade que se explicam por si mesmos, sem necessidade de comentários extensos.</span>
+                </div>
+            </div>
+            <div class="conc-item">
+                <div class="conc-num">3</div>
+                <div class="conc-text">
+                    <strong>Extensibilidade</strong>
+                    <span>Adicionar um novo tipo de desconto ou um novo meio de notificação não requer reescrever as classes de domínio.</span>
+                </div>
+            </div>
+            <div class="conc-item">
+                <div class="conc-num">4</div>
+                <div class="conc-text">
+                    <strong>Testabilidade</strong>
+                    <span>Cada classe pode ser testada de forma isolada, pois suas dependências são claramente definidas e delimitadas.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /slides -->
+
+<!-- NAVIGATION -->
+<nav>
+    <button class="arrow" onclick="changeSlide(-1)">&#8592;</button>
+    <span id="slide-counter">1 / 11</span>
+    <button class="arrow" onclick="changeSlide(1)">&#8594;</button>
+</nav>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    let current = 0;
+
+    function showSlide(n) {
+      slides[current].classList.remove('active');
+      current = (n + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      document.getElementById('slide-counter').textContent =
+        (current + 1) + ' / ' + slides.length;
+    }
+
+    function changeSlide(dir) { showSlide(current + dir); }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changeSlide(-1);
+    });
+</script>
+</body>
+</html>
